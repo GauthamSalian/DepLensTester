@@ -1,6 +1,5 @@
 const axios = require('axios');
 const fetch = require('node-fetch');
-const superagent = require('superagent');
 const pLimit = require('p-limit');
 const logger = require('../config/logger');
 
@@ -57,20 +56,17 @@ const fetchRawJsonWithFetch = async (url) => {
 };
 
 /**
- * Perform healthcheck call using superagent
+ * Perform healthcheck call using axios or node-fetch
  */
-const checkHealthWithSuperagent = async (targetUrl) => {
+const checkHealthWithClient = async (targetUrl) => {
   try {
-    const res = await superagent
-      .get(targetUrl)
-      .timeout({ response: 3000, deadline: 5000 })
-      .set('Accept', 'application/json');
+    const res = await apiClient.get(targetUrl, { timeout: 3000 });
     return {
       statusCode: res.status,
-      body: res.body
+      body: res.data
     };
   } catch (error) {
-    logger.warn(`superagent error: ${error.message}`);
+    logger.warn(`Client health check error: ${error.message}`);
     return { error: error.message, simulated: true };
   }
 };
@@ -92,7 +88,7 @@ const batchFetchWithLimit = async (urls, concurrency = 2) => {
 module.exports = {
   fetchRepoWithAxios,
   fetchRawJsonWithFetch,
-  checkHealthWithSuperagent,
+  checkHealthWithClient,
   batchFetchWithLimit,
   apiClient
 };

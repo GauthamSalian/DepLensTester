@@ -5,7 +5,7 @@ const morgan = require('morgan');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
 
-const { register, httpRequestDurationMicroseconds } = require('./config/metrics');
+const { register, observeRequest } = require('./config/metrics');
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const externalRoutes = require('./routes/external.routes');
@@ -32,15 +32,13 @@ app.use(
   })
 );
 
-// Metrics collection middleware with prom-client
+// Metrics collection middleware
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
     const duration = (Date.now() - start) / 1000;
     const route = req.route ? req.route.path : req.path;
-    httpRequestDurationMicroseconds
-      .labels(req.method, route, res.statusCode.toString())
-      .observe(duration);
+    observeRequest(req.method, route, res.statusCode, duration);
   });
   next();
 });

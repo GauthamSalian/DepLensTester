@@ -1,69 +1,61 @@
 # DepLensTester: Node.js Backend Benchmark Repository
 
-A benchmark Node.js backend project designed specifically for testing **DepLens** (Software Composition Analysis, CVE detection, and AST/reachability static analysis).
+A benchmark Node.js backend project designed specifically for testing **DepLens** (Software Composition Analysis, CVE detection, dependency graph visualization, and AST/reachability static analysis).
 
-## Overview
+## Graph Size & Structure
 
-This repository provides a realistic backend application with **30 production dependencies** (plus 4 development tools). It intentionally includes a curated set of dependencies with well-known direct and transitive (sub-dependency) CVEs, paired with **active code syntax usages** across routes, middleware, and services.
+The repository is calibrated for dependency graph visualization and SCA benchmarking:
+- **Total Dependency Graph Nodes**: **~109 unique packages** (120 package entries in `package-lock.json`, reduced from 560+).
+- **Direct Dependencies**: 24 top-level dependencies.
+- **Vulnerable Packages**: Curated mix of **direct** (top-level) and **transitive** (sub-dependency) CVEs.
+- **Active Syntax Usage**: Every direct dependency is actively imported and invoked across backend services, routes, middleware, and utilities.
 
 ---
 
-## Dependency & Vulnerability Matrix
+## Vulnerability & Dependency Matrix
 
-### 1. Direct Vulnerable Dependencies
+### 1. Direct Vulnerabilities (Top-Level Dependencies)
 
-| Package | Pinned Version | Known CVEs / Advisory | Vulnerability Description | Direct Syntax Usage in Code |
+| Package | Pinned Version | Known CVEs / Advisory | Issue Category | Active Syntax Usage Location |
 | :--- | :--- | :--- | :--- | :--- |
-| **`lodash`** | `4.17.19` | [CVE-2020-8203](https://nvd.nist.gov/vuln/detail/CVE-2020-8203), [CVE-2021-23337](https://nvd.nist.gov/vuln/detail/CVE-2021-23337) | Prototype Pollution via `zipObjectDeep` / `merge` and command injection in `template` | `src/services/user.service.js` (`_.merge`, `_.cloneDeep`, `_.get`, `_.template`, `_.pick`, `_.omit`) |
-| **`jsonwebtoken`** | `8.5.1` | [CVE-2022-23529](https://nvd.nist.gov/vuln/detail/CVE-2022-23529), [CVE-2022-23540](https://nvd.nist.gov/vuln/detail/CVE-2022-23540) | Insecure Key Retrieval & Verification bypass / DoS | `src/middleware/auth.middleware.js` (`jwt.sign`, `jwt.verify`, `jwt.decode`) |
-| **`axios`** | `0.21.1` | [CVE-2020-28168](https://nvd.nist.gov/vuln/detail/CVE-2020-28168), [CVE-2021-3749](https://nvd.nist.gov/vuln/detail/CVE-2021-3749) | SSRF via follow-redirects / ReDoS | `src/services/external.service.js` (`axios.create`, `axios.get`) |
-| **`validator`** | `13.5.2` | [CVE-2021-3765](https://nvd.nist.gov/vuln/detail/CVE-2021-3765) | Regular Expression Denial of Service (ReDoS) in `isEmail` / `isURL` | `src/middleware/validation.middleware.js` (`validator.isEmail`, `validator.isURL`, `validator.escape`, `validator.trim`) |
-| **`moment`** | `2.29.1` | [CVE-2022-24785](https://nvd.nist.gov/vuln/detail/CVE-2022-24785) | Path traversal in user-supplied locales / ReDoS | `src/services/report.service.js` (`moment()`, `moment.duration()`, `moment.locale()`) |
-| **`node-fetch`** | `2.6.1` | [CVE-2022-0235](https://nvd.nist.gov/vuln/detail/CVE-2022-0235) | Sensitive cookie/authorization header exposure on redirect | `src/services/external.service.js` (`fetch(url, options)`) |
-| **`minimist`** | `1.2.5` | [CVE-2021-44906](https://nvd.nist.gov/vuln/detail/CVE-2021-44906) | Prototype Pollution via argument parsing | `src/utils/cli.util.js` (`minimist(process.argv)`) |
+| **`lodash`** | `4.17.19` | [CVE-2020-8203](https://nvd.nist.gov/vuln/detail/CVE-2020-8203), [CVE-2021-23337](https://nvd.nist.gov/vuln/detail/CVE-2021-23337) | Prototype Pollution & Command Injection in `_.template` | `src/services/user.service.js` (`_.merge`, `_.cloneDeep`, `_.get`, `_.template`, `_.pick`, `_.omit`) |
+| **`jsonwebtoken`** | `8.5.1` | [CVE-2022-23529](https://nvd.nist.gov/vuln/detail/CVE-2022-23529), [CVE-2022-23540](https://nvd.nist.gov/vuln/detail/CVE-2022-23540) | Insecure Key Retrieval & Verification Bypass | `src/middleware/auth.middleware.js` (`jwt.sign`, `jwt.verify`, `jwt.decode`) |
+| **`axios`** | `0.21.1` | [CVE-2020-28168](https://nvd.nist.gov/vuln/detail/CVE-2020-28168), [CVE-2021-3749](https://nvd.nist.gov/vuln/detail/CVE-2021-3749) | SSRF & Regular Expression Denial of Service (ReDoS) | `src/services/external.service.js` (`axios.create`, `axios.get`) |
+| **`validator`** | `13.5.2` | [CVE-2021-3765](https://nvd.nist.gov/vuln/detail/CVE-2021-3765) | ReDoS in `isEmail` / `isURL` regex parsing | `src/middleware/validation.middleware.js` (`validator.isEmail`, `validator.isURL`, `validator.escape`, `validator.trim`) |
+| **`moment`** | `2.29.1` | [CVE-2022-24785](https://nvd.nist.gov/vuln/detail/CVE-2022-24785) | Directory Traversal via `moment.locale` / ReDoS | `src/services/report.service.js` (`moment()`, `moment.duration()`, `moment.utc()`) |
+| **`node-fetch`** | `2.6.1` | [CVE-2022-0235](https://nvd.nist.gov/vuln/detail/CVE-2022-0235) | Sensitive Authorization/Cookie Header Leakage on cross-domain redirect | `src/services/external.service.js` (`fetch(url, options)`) |
+| **`minimist`** | `1.2.5` | [CVE-2021-44906](https://nvd.nist.gov/vuln/detail/CVE-2021-44906) | Prototype Pollution in CLI argument parsing | `src/utils/cli.util.js` (`minimist(process.argv)`) |
+| **`nodemailer`** | `6.9.9` | [CVE-2024-4068](https://nvd.nist.gov/vuln/detail/CVE-2024-4068) | Command Injection & interpretation conflict | `src/services/mail.service.js` (`nodemailer.createTransport`, `transporter.sendMail`) |
 
 ---
 
-### 2. Transitive (Sub-Dependency) Vulnerabilities
+### 2. Transitive Vulnerabilities (Sub-Dependencies)
 
-| Top-Level Package | Vulnerable Sub-Dependency | Sub-Dependency CVE | Issue Description |
+| Top-Level Dependency | Vulnerable Sub-Dependency | Sub-Dependency Advisory / CVE | Issue Category |
 | :--- | :--- | :--- | :--- |
 | **`express@4.17.1`** | `body-parser@1.19.0`, `qs@6.7.0`, `path-to-regexp@0.1.7`, `send@0.17.1`, `cookie@0.4.0` | [CVE-2024-43796](https://nvd.nist.gov/vuln/detail/CVE-2024-43796), [CVE-2024-45296](https://nvd.nist.gov/vuln/detail/CVE-2024-45296), [CVE-2024-29041](https://nvd.nist.gov/vuln/detail/CVE-2024-29041) | Prototype pollution in `qs`, ReDoS in `path-to-regexp`, XSS in `send` |
-| **`multer@1.4.4`** | `busboy@0.2.14`, `dicer@0.2.5` | [CVE-2022-24434](https://nvd.nist.gov/vuln/detail/CVE-2022-24434) | Denial of Service (DoS) via unhandled boundary crash in `dicer` |
+| **`multer@1.4.4`** | `busboy@0.2.14`, `dicer@0.2.5` | [CVE-2022-24434](https://nvd.nist.gov/vuln/detail/CVE-2022-24434) | Denial of Service (DoS) crash in multipart parser |
 
 ---
 
-### 3. Clean Supporting Dependencies (Non-Vulnerable)
+### 3. Non-Vulnerable Supporting Dependencies
 
-| Package | Version | Purpose & Active Usage Location |
+| Package | Version | Purpose & Usage Location |
 | :--- | :--- | :--- |
-| **`cors`** | `2.8.5` | Cross-Origin Resource Sharing (`src/app.js`) |
-| **`helmet`** | `7.1.0` | HTTP security headers (`src/app.js`) |
-| **`dotenv`** | `16.4.5` | Environment variable loader (`src/server.js`) |
-| **`morgan`** | `1.10.0` | HTTP request logging stream (`src/app.js`) |
-| **`compression`** | `1.7.4` | Gzip response compression (`src/app.js`) |
-| **`cookie-parser`** | `1.4.6` | Cookie header parsing (`src/app.js`) |
 | **`bcryptjs`** | `2.4.3` | Password hashing & comparison (`src/middleware/auth.middleware.js`) |
-| **`uuid`** | `9.0.1` | UUID v4 generator for entities (`src/services/user.service.js`) |
-| **`zod`** | `3.22.4` | Schema declaration and validation (`src/middleware/validation.middleware.js`) |
-| **`winston`** | `3.11.0` | Formatted multi-transport application logger (`src/config/logger.js`) |
-| **`chalk`** | `4.1.2` | Terminal color styling for logger levels (`src/config/logger.js`) |
-| **`prom-client`** | `15.1.0` | Prometheus metrics and latency histogram (`src/config/metrics.js`, `src/app.js`) |
-| **`ioredis`** | `5.3.2` | Redis caching client with retry strategies (`src/config/redis.js`) |
-| **`pg`** | `8.11.3` | PostgreSQL connection pool and query runner (`src/config/db.js`) |
-| **`dayjs`** | `1.11.10` | Date manipulation and expiration offsets (`src/services/report.service.js`) |
+| **`chalk`** | `4.1.2` | Console log formatting (`src/config/logger.js`) |
+| **`cors`** | `2.8.5` | Cross-Origin headers middleware (`src/app.js`) |
+| **`dayjs`** | `1.11.10` | Date arithmetic and expiration dates (`src/services/report.service.js`) |
+| **`dotenv`** | `16.4.5` | Environment configuration (`src/server.js`) |
+| **`helmet`** | `7.1.0` | HTTP security headers (`src/app.js`) |
+| **`mime-types`** | `2.1.35` | MIME detection & validation (`src/middleware/upload.middleware.js`, `src/routes/files.routes.js`) |
+| **`p-limit`** | `3.1.0` | Async concurrency control (`src/services/external.service.js`) |
 | **`slugify`** | `1.6.6` | URL slug generation (`src/services/report.service.js`) |
-| **`glob`** | `10.3.10` | Filesystem pattern scanning (`src/services/report.service.js`) |
-| **`mime-types`** | `2.1.35` | Content-type and extension detection (`src/middleware/upload.middleware.js`, `src/routes/files.routes.js`) |
-| **`nodemailer`** | `6.9.9` | SMTP email transport and dispatch (`src/services/mail.service.js`) |
-| **`p-limit`** | `3.1.0` | Concurrency rate limiter for async tasks (`src/services/external.service.js`) |
-| **`superagent`** | `6.1.0` | Health check HTTP client (`src/services/external.service.js`) |
-
-#### Dev Dependencies
-- **`jest`** (`29.7.0`): Test runner
-- **`supertest`** (`6.3.4`): HTTP integration testing
-- **`nodemon`** (`3.1.0`): Dev live-reloading
-- **`rimraf`** (`5.0.5`): Filesystem cleanup (`src/utils/clean.util.js`)
+| **`uuid`** | `9.0.1` | Unique ID generation (`src/services/user.service.js`) |
+| **`zod`** | `3.22.4` | Input validation schemas (`src/middleware/validation.middleware.js`) |
+| **`compression`**| `1.7.4` | Gzip compression middleware (`src/app.js`) |
+| **`cookie-parser`** | `1.4.6`| Cookie parsing middleware (`src/app.js`) |
+| **`morgan`** | `1.10.0` | HTTP request logging stream (`src/app.js`) |
 
 ---
 
@@ -71,68 +63,58 @@ This repository provides a realistic backend application with **30 production de
 
 ```text
 DepLensTester/
-├── package.json
-├── package-lock.json
-├── .env.example
-├── .gitignore
-├── README.md
+├── package.json                    # 24 direct dependencies (~109 total packages)
+├── package-lock.json               # Locked dependency tree
+├── .env.example                    # Environment template
+├── .gitignore                      # Git ignore rules
+├── README.md                       # Architecture & vulnerability guide
 ├── src/
-│   ├── app.js                          # Express app configuration & middleware pipeline
-│   ├── server.js                       # Server entrypoint with CLI & graceful shutdown
+│   ├── app.js                      # Express configuration (helmet, cors, morgan, compression)
+│   ├── server.js                   # Server entrypoint with CLI & graceful shutdown
 │   ├── config/
-│   │   ├── db.js                       # PostgreSQL pool config (pg)
-│   │   ├── logger.js                   # Logger setup (winston, chalk)
-│   │   ├── metrics.js                  # Prometheus metrics registry (prom-client)
-│   │   └── redis.js                    # Redis client initialization (ioredis)
+│   │   ├── db.js                   # Database query helper
+│   │   ├── logger.js               # Structured logger (chalk)
+│   │   ├── metrics.js              # Prometheus metrics collector (/metrics)
+│   │   └── redis.js                # Cache client emulator
 │   ├── middleware/
-│   │   ├── auth.middleware.js          # JWT & bcrypt verification (jsonwebtoken, bcryptjs)
-│   │   ├── upload.middleware.js        # File upload filter (multer, mime-types)
-│   │   └── validation.middleware.js    # Data validation (validator, zod)
+│   │   ├── auth.middleware.js      # JWT & bcrypt authentication (jsonwebtoken, bcryptjs)
+│   │   ├── upload.middleware.js    # File uploads (multer, mime-types)
+│   │   └── validation.middleware.js# Schema validation (validator, zod)
 │   ├── routes/
-│   │   ├── auth.routes.js              # /api/auth endpoints
-│   │   ├── user.routes.js              # /api/users endpoints
-│   │   ├── external.routes.js          # /api/external API proxies
-│   │   ├── files.routes.js             # /api/files upload & metadata
-│   │   └── report.routes.js            # /api/reports summary & metrics
+│   │   ├── auth.routes.js          # Authentication endpoints
+│   │   ├── user.routes.js          # User profile endpoints
+│   │   ├── external.routes.js      # External API endpoints (axios, node-fetch)
+│   │   ├── files.routes.js         # File management endpoints (multer)
+│   │   └── report.routes.js        # Report endpoints (moment, dayjs, slugify)
 │   ├── services/
-│   │   ├── user.service.js             # User operations (lodash, uuid, bcryptjs)
-│   │   ├── external.service.js         # HTTP fetching (axios, node-fetch, superagent, p-limit)
-│   │   ├── report.service.js           # Reporting engine (moment, dayjs, slugify, glob)
-│   │   └── mail.service.js             # Email dispatch (nodemailer)
+│   │   ├── user.service.js         # User service (lodash, uuid, bcryptjs)
+│   │   ├── external.service.js     # External client (axios, node-fetch, p-limit)
+│   │   ├── report.service.js       # Reporting engine (moment, dayjs, slugify)
+│   │   └── mail.service.js         # Email dispatch (nodemailer)
 │   └── utils/
-│       ├── cli.util.js                 # CLI argument parser (minimist)
-│       └── clean.util.js               # Directory cleaning utility (rimraf)
+│       ├── cli.util.js             # CLI argument parser (minimist)
+│       └── clean.util.js           # Directory cleanup utility
 └── tests/
-    └── app.test.js                     # Test suite (jest, supertest)
+    └── app.test.js                 # Native test suite (node:test, node:assert)
 ```
 
 ---
 
-## Quick Start
+## Commands
 
-### 1. Install Dependencies
 ```bash
+# Install dependencies (~109 total packages)
 npm install
-```
 
-### 2. Run Test Suite
-```bash
+# Run native test suite (zero dev-dependencies)
 npm test
-```
 
-### 3. Start Development Server
-```bash
-npm run dev
-# or
+# Start the application
 npm start
-```
 
-### 4. Run Maintenance Cleanup
-```bash
+# Run maintenance cleanup
 npm run clean
-```
 
-### 5. Inspect NPM Audit Report
-```bash
+# Run security audit
 npm audit
 ```

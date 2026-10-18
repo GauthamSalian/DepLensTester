@@ -1,63 +1,89 @@
-const request = require('supertest');
+const { test, describe, before, after } = require('node:test');
+const assert = require('node:assert');
+const http = require('http');
 const app = require('../src/app');
 
 describe('DepLens Benchmark Test Suite', () => {
-  it('GET /health returns healthy status', async () => {
-    const res = await request(app).get('/health');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.status).toBe('healthy');
+  let server;
+  let baseUrl;
+
+  before(async () => {
+    await new Promise((resolve) => {
+      server = http.createServer(app);
+      server.listen(0, '127.0.0.1', () => {
+        const port = server.address().port;
+        baseUrl = `http://127.0.0.1:${port}`;
+        resolve();
+      });
+    });
   });
 
-  it('GET /metrics returns prometheus metrics', async () => {
-    const res = await request(app).get('/metrics');
-    expect(res.statusCode).toBe(200);
-    expect(res.text).toContain('http_request_duration_seconds');
+  after(async () => {
+    await new Promise((resolve) => {
+      server.close(resolve);
+    });
   });
 
-  it('POST /api/auth/register creates user and generates JWT', async () => {
-    const res = await request(app)
-      .post('/api/auth/register')
-      .send({
+  test('GET /health returns healthy status', async () => {
+    const res = await fetch(`${baseUrl}/health`);
+    assert.strictEqual(res.status, 200);
+    const body = await res.json();
+    assert.strictEqual(body.status, 'healthy');
+  });
+
+  test('GET /metrics returns prometheus metrics', async () => {
+    const res = await fetch(`${baseUrl}/metrics`);
+    assert.strictEqual(res.status, 200);
+    const text = await res.text();
+    assert.match(text, /http_requests_total/);
+  });
+
+  test('POST /api/auth/register creates user and generates JWT', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         username: 'alice_tester',
         email: 'alice@example.com',
         password: 'Password123!',
         role: 'user'
-      });
+      })
+    });
 
-    expect(res.statusCode).toBe(201);
-    expect(res.body.token).toBeDefined();
-    expect(res.body.user.email).toBe('alice@example.com');
+    assert.strictEqual(res.status, 201);
+    const body = await res.json();
+    assert.ok(body.token);
+    assert.strictEqual(body.user.email, 'alice@example.com');
   });
 
-  it('POST /api/auth/login validates credentials and returns token', async () => {
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({
+  test('POST /api/auth/login validates credentials and returns token', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         email: 'alice@example.com',
         password: 'Password123!'
-      });
+      })
+    });
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body.token).toBeDefined();
+    assert.strictEqual(res.status, 200);
+    const body = await res.json();
+    assert.ok(body.token);
   });
 
-  it('GET /api/reports/summary generates report using moment, dayjs, slugify', async () => {
-    const res = await request(app)
-      .get('/api/reports/summary')
-      .query({ title: 'Quarterly Security Audit' });
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body.slug).toBe('quarterly-security-audit');
-    expect(res.body.generatedAt).toBeDefined();
-    expect(res.body.expiresAt).toBeDefined();
+  test('GET /api/reports/summary generates report using moment, dayjs, slugify', async () => {
+    const res = await fetch(`${baseUrl}/api/reports/summary?title=Quarterly%20Security%20Audit`);
+    assert.strictEqual(res.status, 200);
+    const body = await res.json();
+    assert.strictEqual(body.slug, 'quarterly-security-audit');
+    assert.ok(body.generatedAt);
+    assert.ok(body.expiresAt);
   });
 
-  it('GET /api/files/meta returns mimetype analysis', async () => {
-    const res = await request(app)
-      .get('/api/files/meta')
-      .query({ filename: 'report.json' });
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body.detectedMime).toBe('application/json');
+  test('GET /api/files/meta returns mimetype analysis', async () => {
+    const res = await fetch(`${baseUrl}/api/files/meta?filename=report.json`);
+    assert.strictEqual(res.status, 200);
+    const body = await res.json();
+    assert.strictEqual(body.detectedMime, 'application/json');
   });
 });

@@ -3,7 +3,7 @@ const router = express.Router();
 const {
   fetchRepoWithAxios,
   fetchRawJsonWithFetch,
-  checkHealthWithSuperagent,
+  checkHealthWithClient,
   batchFetchWithLimit
 } = require('../services/external.service');
 const { isValidUrl } = require('../middleware/validation.middleware');
@@ -26,10 +26,10 @@ router.get('/proxy-json', async (req, res) => {
   return res.json(result);
 });
 
-// Health check an endpoint via superagent
+// Health check an endpoint via client
 router.get('/healthcheck-endpoint', async (req, res) => {
   const targetUrl = req.query.url || 'http://localhost:3000/health';
-  const result = await checkHealthWithSuperagent(targetUrl);
+  const result = await checkHealthWithClient(targetUrl);
   return res.json(result);
 });
 

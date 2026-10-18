@@ -1,7 +1,7 @@
 const moment = require('moment');
 const dayjs = require('dayjs');
 const slugify = require('slugify');
-const { globSync } = require('glob');
+const fs = require('fs');
 const path = require('path');
 const logger = require('../config/logger');
 
@@ -42,16 +42,32 @@ const generateSlug = (title) => {
 };
 
 /**
- * Scan workspace directory for specific file patterns using glob
+ * Scan workspace directory for specific file patterns
  */
 const findSourceFiles = (pattern = '**/*.js') => {
   try {
     const cwd = path.join(__dirname, '..');
-    const files = globSync(pattern, { cwd, ignore: 'node_modules/**' });
+    const scanDir = (dir) => {
+      let results = [];
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (entry.name !== 'node_modules' && entry.name !== '.git') {
+            results = results.concat(scanDir(fullPath));
+          }
+        } else if (entry.name.endsWith('.js')) {
+          results.push(path.relative(cwd, fullPath));
+        }
+      }
+      return results;
+    };
+
+    const files = scanDir(cwd);
     logger.debug(`Found ${files.length} files matching ${pattern}`);
     return files;
   } catch (error) {
-    logger.error(`Glob scanning failed: ${error.message}`);
+    logger.error(`Source scanning failed: ${error.message}`);
     return [];
   }
 };
