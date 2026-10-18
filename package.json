@@ -1,0 +1,59 @@
+{
+  "name": "deplens-node-backend-test",
+  "version": "1.0.0",
+  "description": "Node.js backend benchmark repository for DepLens vulnerability and reachability testing",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "clean": "node src/utils/clean.util.js",
+    "test": "jest"
+  },
+  "keywords": [
+    "security",
+    "vulnerabilities",
+    "cve",
+    "deplens",
+    "reachability"
+  ],
+  "author": "DepLens Team",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "0.21.1",
+    "bcryptjs": "2.4.3",
+    "chalk": "4.1.2",
+    "compression": "1.7.4",
+    "cookie-parser": "1.4.6",
+    "cors": "2.8.5",
+    "dayjs": "1.11.10",
+    "dotenv": "16.4.5",
+    "express": "4.17.1",
+    "glob": "10.3.10",
+    "helmet": "7.1.0",
+    "ioredis": "5.3.2",
+    "jsonwebtoken": "8.5.1",
+    "lodash": "4.17.19",
+    "mime-types": "2.1.35",
+    "minimist": "1.2.5",
+    "moment": "2.29.1",
+    "morgan": "1.10.0",
+    "multer": "1.4.4",
+    "node-fetch": "2.6.1",
+    "nodemailer": "6.9.9",
+    "p-limit": "3.1.0",
+    "pg": "8.11.3",
+    "prom-client": "15.1.0",
+    "slugify": "1.6.6",
+    "superagent": "6.1.0",
+    "uuid": "^9.0.1",
+    "validator": "13.5.2",
+    "winston": "3.11.0",
+    "zod": "3.22.4"
+  },
+  "devDependencies": {
+    "jest": "29.7.0",
+    "nodemon": "3.1.0",
+    "rimraf": "5.0.5",
+    "supertest": "6.3.4"
+  }
+}
